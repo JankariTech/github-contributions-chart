@@ -16,7 +16,8 @@ const availableThemes = {
   pink: "Pink",
   YlGnBu: "YlGnBu",
   solarizedDark: 'Solarized Dark',
-  solarizedLight: 'Solarized Light'
+  solarizedLight: 'Solarized Light',
+  jankariTech: 'JankariTech'
 };
 
 const Preview = ({ themeName }) => (
