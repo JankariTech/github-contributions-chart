@@ -86,6 +86,8 @@ const App = () => {
       data,
       username: username,
       themeName: theme,
+      scaleFactor: 12,
+      startingDate: '2018-07-17',
       footerText: "Made by @sallar & friends - github-contributions.vercel.app"
     });
     contentRef.current.scrollIntoView({
