@@ -80,7 +80,7 @@ const App = () => {
       return;
     }
 
-    const { drawContributions } = await import("github-contributions-canvas");
+    const { drawContributions } = await import("github-contributions-canvas/dist");
 
     drawContributions(canvasRef.current, {
       data,
