@@ -8,7 +8,7 @@ clone github-contributions-chart & github-contributions-canvas
 
 - install and build github-contributions-canvas: `cd github-contributions-canvas && yarn install && yarn build && cd ..`
 - install and run clone github-contributions-chart: `cd github-contributions-chart && npm install && npm run dev`
-- set starting date of person in `github-contributions-chart/src/pages/index.js:77`
+- set starting & end date of person in `github-contributions-chart/src/pages/index.js:90-91`
 - browse to http://localhost:3000/
 - select `JankariTech` theme
 - enter GitHub username
