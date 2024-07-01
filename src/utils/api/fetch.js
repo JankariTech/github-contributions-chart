@@ -53,7 +53,6 @@ async function fetchDataForYear(url, year, format) {
     [contribCount] = contribText;
     contribCount = parseInt(contribCount.replace(/,/g, ""), 10);
   }
-
   return {
     year,
     total: contribCount || 0,
@@ -69,9 +68,20 @@ async function fetchDataForYear(url, year, format) {
           .split("-")
           .map((d) => parseInt(d, 10));
         const color = COLOR_MAP[$day.attr("data-level")];
+        const idContributionCount = $day.attr("id")
+        contribCount = 0
+        try {
+          const contributionsText = $('[for="' + idContributionCount + '"]').text()
+          const match = contributionsText.match(/^(\d+) contribution.*\.$/);
+          contribCount = parseInt(match[1], 10);
+        } catch (e) {
+          // pass
+          contribCount = 0
+        }
+
         const value = {
           date: $day.attr("data-date"),
-          count: index === 0 ? contribCount : 0,
+          count: contribCount,
           color,
           intensity: $day.attr("data-level") || 0
         };
