@@ -116,13 +116,14 @@ h6 {
 form {
   margin: 2em 0 1em;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
+  gap: 0.5rem;
 }
 
 input {
   border: 0.1rem solid var(--input-border);
-  border-right: 0;
   border-radius: 0.4rem;
   padding: 0.6rem 1rem;
   height: 4rem;
@@ -156,13 +157,11 @@ button:disabled {
   cursor: not-allowed;
 }
 
-form input {
-  width: 30rem;
-  border-radius: 0.4rem 0 0 0.4rem;
-}
-
+form input,
 form button {
-  border-radius: 0 0.4rem 0.4rem 0;
+  width: 30rem;
+  max-width: 100%;
+  border-radius: 0.4rem;
 }
 
 .App-buttons {
@@ -261,7 +260,6 @@ footer a {
   }
 
   form input {
-    margin-bottom: 0.5rem;
     text-align: center;
   }
 
@@ -274,10 +272,6 @@ footer a {
   .App {
     display: block;
     text-align: center;
-  }
-
-  form input {
-    flex: 1;
   }
 
   .App-themes-list {

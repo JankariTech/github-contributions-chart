@@ -1,5 +1,6 @@
 import cheerio from "cheerio";
 import _ from "lodash";
+import { fetchGitlabContributions } from "./gitlab";
 
 const COLOR_MAP = {
   0: "#ebedf0",
@@ -33,7 +34,15 @@ async function fetchYears(username) {
     });
 }
 
-async function fetchDataForYear(url, year, format) {
+// GitHub uses 4 levels, the intensity of a day is calculated relative to the
+// busiest day of the year
+function intensityForCount(count, maxCount) {
+  if (count <= 0) return 0;
+  if (maxCount <= 0) return 0;
+  return Math.min(4, Math.ceil((count / maxCount) * 4));
+}
+
+async function fetchDataForYear(url, year, format, gitlabContributions = {}) {
   const data = await fetch(`https://github.com${url}`, {
     headers: {
       "x-requested-with": "XMLHttpRequest"
@@ -53,47 +62,63 @@ async function fetchDataForYear(url, year, format) {
     [contribCount] = contribText;
     contribCount = parseInt(contribCount.replace(/,/g, ""), 10);
   }
+  const parseDay = (day) => {
+    const $day = $(day);
+    const dateString = $day.attr("data-date");
+    const date = dateString.split("-").map((d) => parseInt(d, 10));
+    let dayCount = 0;
+    try {
+      const idContributionCount = $day.attr("id");
+      const contributionsText = $('[for="' + idContributionCount + '"]').text();
+      const match = contributionsText.match(/^(\d+) contribution.*\.$/);
+      dayCount = parseInt(match[1], 10);
+    } catch (e) {
+      // pass
+      dayCount = 0;
+    }
+
+    const gitlabCount = gitlabContributions[dateString] || 0;
+    dayCount += gitlabCount;
+
+    const value = {
+      date: dateString,
+      count: dayCount,
+      gitlabCount,
+      color: COLOR_MAP[$day.attr("data-level")],
+      intensity: $day.attr("data-level") || 0
+    };
+    return { date, value };
+  };
+
+  const days = $days.get().map((day) => parseDay(day));
+  const gitlabTotal = days.reduce((sum, { value }) => sum + value.gitlabCount, 0);
+
+  // the levels reported by GitHub don't know about the GitLab contributions,
+  // so they have to be recalculated as soon as there are any
+  if (gitlabTotal > 0) {
+    const maxCount = days.reduce(
+      (max, { value }) => Math.max(max, value.count),
+      0
+    );
+    days.forEach(({ value }) => {
+      value.intensity = intensityForCount(value.count, maxCount);
+      value.color = COLOR_MAP[value.intensity];
+    });
+  }
+
   return {
     year,
-    total: contribCount || 0,
+    total: (contribCount || 0) + gitlabTotal,
     range: {
       start: $($days.get(0)).attr("data-date"),
       end: $($days.get($days.length - 1)).attr("data-date")
     },
     contributions: (() => {
-      const parseDay = (day, index) => {
-        const $day = $(day);
-        const date = $day
-          .attr("data-date")
-          .split("-")
-          .map((d) => parseInt(d, 10));
-        const color = COLOR_MAP[$day.attr("data-level")];
-        const idContributionCount = $day.attr("id")
-        contribCount = 0
-        try {
-          const contributionsText = $('[for="' + idContributionCount + '"]').text()
-          const match = contributionsText.match(/^(\d+) contribution.*\.$/);
-          contribCount = parseInt(match[1], 10);
-        } catch (e) {
-          // pass
-          contribCount = 0
-        }
-
-        const value = {
-          date: $day.attr("data-date"),
-          count: contribCount,
-          color,
-          intensity: $day.attr("data-level") || 0
-        };
-        return { date, value };
-      };
-
       if (format !== "nested") {
-        return $days.get().map((day, index) => parseDay(day, index).value);
+        return days.map(({ value }) => value);
       }
 
-      return $days.get().reduce((o, day, index) => {
-        const { date, value } = parseDay(day, index);
+      return days.reduce((o, { date, value }) => {
         const [y, m, d] = date;
         if (!o[y]) o[y] = {};
         if (!o[y][m]) o[y][m] = {};
@@ -104,10 +129,21 @@ async function fetchDataForYear(url, year, format) {
   };
 }
 
-export async function fetchDataForAllYears(username, format) {
-  const years = await fetchYears(username);
+export async function fetchDataForAllYears(
+  username,
+  format,
+  gitlabUsername,
+  gitlabUrl,
+  gitlabToken
+) {
+  const [years, gitlabContributions] = await Promise.all([
+    fetchYears(username),
+    fetchGitlabContributions(gitlabUsername, gitlabUrl, gitlabToken)
+  ]);
   return Promise.all(
-    years.map((year) => fetchDataForYear(year.href, year.text, format))
+    years.map((year) =>
+      fetchDataForYear(year.href, year.text, format, gitlabContributions)
+    )
   ).then((resp) => {
     return {
       years: (() => {
