@@ -2,8 +2,21 @@ import { toast } from "react-hot-toast";
 
 const API_URL = "/api/v1/";
 
-export function fetchData(username) {
-  return fetch(API_URL + username).then((res) => res.json());
+export function fetchData(username, gitlab = {}) {
+  const { username: gitlabUsername, url: gitlabUrl, token: gitlabToken } = gitlab;
+  const params = new URLSearchParams();
+  if (gitlabUsername && gitlabUrl) {
+    params.set("gitlabUsername", gitlabUsername);
+    params.set("gitlabUrl", gitlabUrl);
+  }
+  const query = params.toString() ? `?${params.toString()}` : "";
+  const headers = {};
+  if (gitlabToken) {
+    headers["x-gitlab-token"] = gitlabToken;
+  }
+  return fetch(API_URL + username + query, { headers }).then((res) =>
+    res.json()
+  );
 }
 
 export function download(canvas) {
@@ -82,4 +95,12 @@ export async function copyToClipboard(canvas) {
 
 export function cleanUsername(username) {
   return username.replace(/^(http|https):\/\/(?!www\.)github\.com\//, "");
+}
+
+export function cleanGitlabUsername(username) {
+  return username.trim().replace(/^(http|https):\/\/[^/]+\//, "");
+}
+
+export function cleanGitlabUrl(url) {
+  return url.trim().replace(/\/+$/, "");
 }

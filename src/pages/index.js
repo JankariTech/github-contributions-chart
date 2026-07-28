@@ -5,6 +5,8 @@ import {
   fetchData,
   downloadJSON,
   cleanUsername,
+  cleanGitlabUsername,
+  cleanGitlabUrl,
   share,
   copyToClipboard
 } from "../utils/export";
@@ -16,6 +18,9 @@ const App = () => {
   const contentRef = useRef();
   const [loading, setLoading] = useState(false);
   const [username, setUsername] = useState("");
+  const [gitlabUsername, setGitlabUsername] = useState("");
+  const [gitlabUrl, setGitlabUrl] = useState("");
+  const [gitlabToken, setGitlabToken] = useState("");
   const [theme, setTheme] = useState("standard");
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
@@ -31,15 +36,23 @@ const App = () => {
     e.preventDefault();
 
     setUsername(cleanUsername(username));
+    setGitlabUsername(cleanGitlabUsername(gitlabUsername));
+    setGitlabUrl(cleanGitlabUrl(gitlabUrl));
     setLoading(true);
     setError(null);
     setData(null);
 
-    fetchData(cleanUsername(username))
+    fetchData(cleanUsername(username), {
+      username: cleanGitlabUsername(gitlabUsername),
+      url: cleanGitlabUrl(gitlabUrl),
+      token: gitlabToken.trim()
+    })
       .then((data) => {
         setLoading(false);
 
-        if (data.years.length === 0) {
+        if (data.error) {
+          setError(data.error);
+        } else if (data.years.length === 0) {
           setError("Could not find your profile");
         } else {
           setData(data);
@@ -87,8 +100,8 @@ const App = () => {
       username: username,
       themeName: theme,
       scaleFactor: 12,
-      startingDate: '2020-12-08',
-      endDate: '2024-01-14',
+      startingDate: '2023-04-14',
+      endDate: '2026-07-31',
       footerText: "Made by @sallar & friends - github-contributions.vercel.app"
     });
     contentRef.current.scrollIntoView({
@@ -181,6 +194,32 @@ const App = () => {
           autoCorrect="off"
           autoCapitalize="none"
           autoFocus
+        />
+        <input
+          placeholder="GitLab URL (optional), e.g. https://gitlab.example.com"
+          onChange={(e) => setGitlabUrl(e.target.value)}
+          value={gitlabUrl}
+          id="gitlab-url"
+          autoCorrect="off"
+          autoCapitalize="none"
+        />
+        <input
+          placeholder="Your GitLab Username (optional)"
+          onChange={(e) => setGitlabUsername(e.target.value)}
+          value={gitlabUsername}
+          id="gitlab-username"
+          autoCorrect="off"
+          autoCapitalize="none"
+        />
+        <input
+          type="password"
+          placeholder="GitLab Access Token (optional)"
+          onChange={(e) => setGitlabToken(e.target.value)}
+          value={gitlabToken}
+          id="gitlab-token"
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="none"
         />
         <button type="submit" disabled={username.length <= 0 || loading}>
           <span role="img" aria-label="Stars">
